@@ -84,6 +84,49 @@ from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
 
 
 # ---------------------------------------------------------------------------
+# CONFIGURAZIONE LOGGING
+# ---------------------------------------------------------------------------
+import logging
+import traceback
+
+logger = logging.getLogger("FlazioImportAssistant")
+logger.setLevel(logging.DEBUG)
+
+def _setup_global_logging():
+    """Imposta il logging globale per registrare gli errori non gestiti e generali."""
+    root_imported = Path(__file__).parent / "Imported_Sites"
+    root_imported.mkdir(exist_ok=True)
+    global_log_path = root_imported / "global_import_errors.txt"
+    
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] (Thread: %(threadName)s) %(message)s"
+    )
+    
+    try:
+        file_handler = logging.FileHandler(global_log_path, encoding="utf-8")
+        file_handler.setLevel(logging.WARNING)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except Exception as e:
+        print(f"⚠️ Impossibile configurare il file log globale: {e}", file=sys.stderr)
+        
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        logger.critical(
+            "Errore non gestito che ha causato l'arresto dello script:",
+            exc_info=(exc_type, exc_value, exc_traceback)
+        )
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        
+    sys.excepthook = handle_exception
+
+_setup_global_logging()
+
+
+
+# ---------------------------------------------------------------------------
 # COSTANTI
 # ---------------------------------------------------------------------------
 
@@ -190,6 +233,26 @@ class FlazioImportAssistant:
     def _setup_directories(self) -> None:
         """Crea la cartella principale se non esiste già."""
         self.root_dir.mkdir(parents=True, exist_ok=True)
+
+        # Rimuove eventuali site-handler precedenti per evitare doppioni
+        if hasattr(self, '_site_handler') and self._site_handler in logger.handlers:
+            logger.removeHandler(self._site_handler)
+            self._site_handler.close()
+
+        # Configura il logger specifico per questo sito
+        site_log_path = self.root_dir / "import_errors.txt"
+        formatter = logging.Formatter(
+            "%(asctime)s [%(levelname)s] (Thread: %(threadName)s) %(message)s"
+        )
+        try:
+            site_handler = logging.FileHandler(site_log_path, encoding="utf-8")
+            site_handler.setLevel(logging.WARNING)
+            site_handler.setFormatter(formatter)
+            logger.addHandler(site_handler)
+            self._site_handler = site_handler
+        except Exception as e:
+            print(f"   ⚠️  Impossibile configurare il file log per il sito: {e}")
+
 
     # -----------------------------------------------------------------------
     # UTILITY: Sanitizzazione e naming
@@ -315,7 +378,10 @@ class FlazioImportAssistant:
                 print(f"   ✅ PDF ottimizzato al massimo possibile: {final_size:.2f} MB")
                 
         except Exception as exc:
-            print(f"   ⚠️  Errore durante la compressione del PDF: {exc}")
+            msg = f"Errore durante la compressione del PDF: {exc}"
+            print(f"   ⚠️  {msg}")
+            logger.error(msg, exc_info=True)
+
 
     def _compress_office_doc(self, file_path: Path, max_size_mb: float) -> None:
         import zipfile
@@ -392,7 +458,10 @@ class FlazioImportAssistant:
                             if temp_zip.exists():
                                 temp_zip.unlink()
             except Exception as exc:
-                print(f"   ⚠️  Errore iterazione compressione Office: {exc}")
+                msg = f"Errore iterazione compressione Office: {exc}"
+                print(f"   ⚠️  {msg}")
+                logger.error(msg, exc_info=True)
+
 
         print(f"   ✅ Documento Office ottimizzato al massimo possibile: {file_path.stat().st_size / (1024 * 1024):.2f} MB")
 
@@ -447,7 +516,10 @@ class FlazioImportAssistant:
                             if temp_img.exists():
                                 temp_img.unlink()
             except Exception as exc:
-                print(f"   ⚠️  Errore iterazione compressione immagine: {exc}")
+                msg = f"Errore iterazione compressione immagine: {exc}"
+                print(f"   ⚠️  {msg}")
+                logger.error(msg, exc_info=True)
+
 
         print(f"   ✅ Immagine ottimizzata al massimo possibile: {file_path.stat().st_size / (1024 * 1024):.2f} MB")
 
@@ -553,12 +625,19 @@ class FlazioImportAssistant:
                         _time.sleep(2 * (i + 1))
                         continue
                     # 403, 401, 5xx → prossimo referer
-                except requests.exceptions.Timeout:
+                except requests.exceptions.Timeout as exc:
                     if i == len(attempts) - 1:
+                        msg = f"Timeout di connessione definitivo [{filename[:60]}]: {exc}"
+                        print(f"   ⚠️  {msg}")
+                        logger.warning(msg, exc_info=True)
                         return None
+
                 except Exception as exc:
-                    print(f"   ⚠️  Download fallito [{filename[:60]}]: {exc}")
+                    msg = f"Download fallito [{filename[:60]}]: {exc}"
+                    print(f"   ⚠️  {msg}")
+                    logger.warning(msg, exc_info=True)
                     return None
+
             return None
 
         # Catena di URL da provare: primario + fallback
@@ -572,7 +651,10 @@ class FlazioImportAssistant:
             # result is None → 404 o errore, proviamo il prossimo URL
 
         # Tutti gli URL della catena hanno fallito
-        print(f"   ⚠️  404 Not Found [{filename[:60]}]")
+        msg = f"404 Not Found [{filename[:60]}]"
+        print(f"   ⚠️  {msg}")
+        logger.warning(msg)
+
         return False
 
 
@@ -615,8 +697,11 @@ class FlazioImportAssistant:
                 return urls;
             }""")
         except Exception as exc:
-            print(f"   ⚠️  Errore estrazione font JS: {exc}")
+            msg = f"Errore estrazione font JS: {exc}"
+            print(f"   ⚠️  {msg}")
+            logger.warning(msg, exc_info=True)
             font_urls = []
+
 
         all_font_urls = set(font_urls) | intercepted_font_urls
         for font_href in all_font_urls:
@@ -706,14 +791,20 @@ class FlazioImportAssistant:
         try:
             from fontTools.ttLib import TTFont as _TTFont
         except ImportError:
-            print("   ⚠️  fontTools non disponibile — font non convertito.")
+            msg = "fontTools non disponibile — font non convertito."
+            print(f"   ⚠️  {msg}")
+            logger.warning(msg)
             return
+
 
         try:
             font_obj = _TTFont(str(font_path))
         except Exception as exc:
-            print(f"   ⚠️  Impossibile aprire il font [{font_path.name}]: {exc}")
+            msg = f"Impossibile aprire il font [{font_path.name}]: {exc}"
+            print(f"   ⚠️  {msg}")
+            logger.warning(msg, exc_info=True)
             return
+
 
         try:
             real_name   = None
@@ -791,7 +882,10 @@ class FlazioImportAssistant:
             self.downloaded_font_keys.add(real_name)
 
         except Exception as exc:
-            print(f"   ⚠️  Errore organizzazione font [{font_path.name}]: {exc}")
+            msg = f"Errore organizzazione font [{font_path.name}]: {exc}"
+            print(f"   ⚠️  {msg}")
+            logger.warning(msg, exc_info=True)
+
             try:
                 font_obj.close()
             except Exception:
@@ -827,7 +921,10 @@ class FlazioImportAssistant:
                         if self._download_file(full_url, page_docs_dir, filename):
                             print(f"   📄 Documento scaricato: {filename}")
             except Exception as exc:
-                print(f"   ⚠️  Errore link documento: {exc}")
+                msg = f"Errore link documento: {exc}"
+                print(f"   ⚠️  {msg}")
+                logger.warning(msg, exc_info=True)
+
 
     # -----------------------------------------------------------------------
     # MODULO TESTI: _save_text()
@@ -865,7 +962,10 @@ class FlazioImportAssistant:
 
             print(f"   📝 Testo salvato: {page_name}.txt")
         except Exception as exc:
-            print(f"   ⚠️  Errore salvataggio testo [{page_name}]: {exc}")
+            msg = f"Errore salvataggio testo [{page_name}]: {exc}"
+            print(f"   ⚠️  {msg}")
+            logger.warning(msg, exc_info=True)
+
 
     # -----------------------------------------------------------------------
     # MODULO WIX STORES: estrazione prodotti e product-page URL
@@ -1039,9 +1139,12 @@ class FlazioImportAssistant:
                 prod_list = val.get("list", [])
                 total     = val.get("totalCount", 0)
                 if total > len(prod_list):
-                    print(f"   ⚠️  Wix Store: {total} prodotti totali, "
-                          f"solo {len(prod_list)} nel payload. "
-                          "Naviga /category/all-products per la lista completa.")
+                    msg = (f"Wix Store: {total} prodotti totali, "
+                           f"solo {len(prod_list)} nel payload. "
+                           "Naviga /category/all-products per la lista completa.")
+                    print(f"   ⚠️  {msg}")
+                    logger.warning(msg)
+
                 for prod in prod_list:
                     if isinstance(prod, dict):
                         row = _build_product_row(prod, page_url)
@@ -1890,8 +1993,11 @@ class FlazioImportAssistant:
                     page.goto(url, wait_until="domcontentloaded", timeout=20000)
                     page.wait_for_timeout(1500)
                 except Exception as e:
-                    print(f"   ❌ Impossibile caricare: {e}")
+                    msg = f"Impossibile caricare: {e}"
+                    print(f"   ❌ {msg}")
+                    logger.error(msg, exc_info=True)
                     return
+
 
             # ── Scroll progressivo ottimizzato ──────────────────────────────
             # Step 600px (era 400px) e wait 80ms (era 150ms) = ~2.5x più veloce
@@ -1964,7 +2070,10 @@ class FlazioImportAssistant:
             self._download_all_images(all_imgs, url, page_images_dir)
 
         except Exception as exc:
-            print(f"   ❌ Errore su [{url}]: {exc}")
+            msg = f"Errore su [{url}]: {exc}"
+            print(f"   ❌ {msg}")
+            logger.error(msg, exc_info=True)
+
         finally:
             page.close()
 
@@ -2230,8 +2339,11 @@ class FlazioImportAssistant:
             }
             """)
         except Exception as exc:
-            print(f"   ⚠️  Errore raccolta DOM immagini: {exc}")
+            msg = f"Errore raccolta DOM immagini: {exc}"
+            print(f"   ⚠️  {msg}")
+            logger.warning(msg, exc_info=True)
             raw_urls = []
+
 
         # Raccoglie anche i srcset analizzando l'HTML con BeautifulSoup per sicurezza
         soup = BeautifulSoup(html_content, "html.parser")
@@ -2385,9 +2497,12 @@ class FlazioImportAssistant:
                         # Download fallito: rimuovi dalla cache globale
                         with self._lock:
                             self.downloaded_files.pop(url_done, None)
-                except Exception:
+                except Exception as exc:
+                    msg = f"Eccezione durante il download parallelo di {name_done}: {exc}"
+                    logger.warning(msg, exc_info=True)
                     with self._lock:
                         self.downloaded_files.pop(url_done, None)
+
 
         print(f"   🖼️  Immagini scaricate: {downloaded_count}/{len(tasks)}")
 
@@ -2407,48 +2522,54 @@ class FlazioImportAssistant:
         """
         self._setup_directories()
 
-        print("\n" + "=" * 60)
-        print(f"  🎯 FLAZIO IMPORT ASSISTANT — avviato su:")
-        print(f"     {self.target_url}")
-        print(f"  📁 Output → {self.root_dir}")
-        print(f"  ⚡ Download image worker: {DOWNLOAD_WORKERS} | Max pagine: {MAX_PAGES}")
-        print("=" * 60 + "\n")
+        try:
+            print("\n" + "=" * 60)
+            print(f"  🎯 FLAZIO IMPORT ASSISTANT — avviato su:")
+            print(f"     {self.target_url}")
+            print(f"  📁 Output → {self.root_dir}")
+            print(f"  ⚡ Download image worker: {DOWNLOAD_WORKERS} | Max pagine: {MAX_PAGES}")
+            print("=" * 60 + "\n")
 
-        self._load_sitemap()
+            self._load_sitemap()
 
-        # Un unico browser + un unico context (Playwright sync API è single-thread)
-        with sync_playwright() as pw:
-            self._playwright = pw
-            self._browser = pw.chromium.launch(headless=True)
-            context: BrowserContext = self._browser.new_context(
-                user_agent=(
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/122.0.0.0 Safari/537.36"
-                ),
-                viewport={"width": 1920, "height": 1080},
-            )
+            # Un unico browser + un unico context (Playwright sync API è single-thread)
+            with sync_playwright() as pw:
+                self._playwright = pw
+                self._browser = pw.chromium.launch(headless=True)
+                context: BrowserContext = self._browser.new_context(
+                    user_agent=(
+                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/122.0.0.0 Safari/537.36"
+                    ),
+                    viewport={"width": 1920, "height": 1080},
+                )
 
-            try:
-                # Loop sequenziale — visited_urls come anti-ciclo
-                while self.pages_to_crawl and len(self.visited_urls) < MAX_PAGES:
-                    next_url = self.pages_to_crawl.pop()
-                    if next_url not in self.visited_urls:
-                        self._process_page(next_url, context)
-            finally:
-                context.close()
-                self._browser.close()
+                try:
+                    # Loop sequenziale — visited_urls come anti-ciclo
+                    while self.pages_to_crawl and len(self.visited_urls) < MAX_PAGES:
+                        next_url = self.pages_to_crawl.pop()
+                        if next_url not in self.visited_urls:
+                            self._process_page(next_url, context)
+                finally:
+                    context.close()
+                    self._browser.close()
 
-        # Generazione CSV finale
-        self._write_csv()
+            # Generazione CSV finale
+            self._write_csv()
 
-        # Riepilogo finale
-        print("\n" + "=" * 60)
-        print("  ✅ COMPLETATO!")
-        print(f"  📄 Pagine analizzate : {len(self.visited_urls)}")
-        print(f"  🛍️  Prodotti rilevati : {len(self.detected_products)}")
-        print(f"  📁 Cartella output   : {self.root_dir}")
-        print("=" * 60 + "\n")
+            # Riepilogo finale
+            print("\n" + "=" * 60)
+            print("  ✅ COMPLETATO!")
+            print(f"  📄 Pagine analizzate : {len(self.visited_urls)}")
+            print(f"  🛍️  Prodotti rilevati : {len(self.detected_products)}")
+            print(f"  📁 Cartella output   : {self.root_dir}")
+            print("=" * 60 + "\n")
+        finally:
+            if hasattr(self, '_site_handler'):
+                logger.removeHandler(self._site_handler)
+                self._site_handler.close()
+
 
 
 # ---------------------------------------------------------------------------
@@ -2468,8 +2589,11 @@ if __name__ == "__main__":
             sito = input("🔗 Inserisci l'URL del sito da analizzare: ").strip()
         
         if not sito:
-            print("❌ URL non fornito. Uscita.")
+            msg = "URL non fornito. Uscita."
+            print(f"❌ {msg}")
+            logger.error(msg)
             sys.exit(1)
+
 
         assistant = FlazioImportAssistant(sito)
         assistant.run()
