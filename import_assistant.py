@@ -96,7 +96,7 @@ def _setup_global_logging():
     """Imposta il logging globale per registrare gli errori non gestiti e generali."""
     root_imported = Path(__file__).parent / "Imported_Sites"
     root_imported.mkdir(exist_ok=True)
-    global_log_path = root_imported / "global_import_errors.txt"
+    global_log_path = root_imported / "global_import_details.txt"
     
     formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s] (Thread: %(threadName)s) %(message)s"
@@ -246,6 +246,21 @@ class FlazioImportAssistant:
         # Cache globale URL file già scaricati (mappa: url -> percorso_file)
         self.downloaded_files: dict = {}
 
+        # --- Statistiche scraping (per il riepilogo finale) ---
+        self.stats = {
+            "pages_ok": 0,          # Pagine caricate con successo
+            "pages_failed": 0,      # Pagine non caricabili
+            "images_downloaded": 0,  # Immagini scaricate (Playwright + HTTP)
+            "images_failed": 0,     # Immagini con 404 / errore
+            "images_cached": 0,     # Immagini già in cache (skip)
+            "fonts_converted": 0,   # Font convertiti in TTF/OTF
+            "fonts_duplicated": 0,  # Font duplicati ignorati
+            "documents_downloaded": 0,  # Documenti (PDF, DOC, ecc.)
+            "texts_saved": 0,       # File testo salvati
+            "products_detected": 0, # Prodotti rilevati
+            "pages_detail": [],     # Dettaglio per pagina: (nome, immagini, doc, ...)
+        }
+
         # Riferimenti Playwright (inizializzati in run())
         self._playwright = None
         self._browser: Browser = None
@@ -264,7 +279,7 @@ class FlazioImportAssistant:
             self._site_handler.close()
 
         # Configura il logger specifico per questo sito
-        site_log_path = self.root_dir / "import_errors.txt"
+        site_log_path = self.root_dir / "import_details.txt"
         formatter = logging.Formatter(
             "%(asctime)s [%(levelname)s] (Thread: %(threadName)s) %(message)s"
         )
@@ -920,6 +935,7 @@ class FlazioImportAssistant:
                 font_obj.close()
                 if font_path.exists():
                     font_path.unlink()
+                self.stats["fonts_duplicated"] += 1
                 print(f"   ♻️  Font duplicato ignorato: {real_name}")
                 return
 
@@ -950,6 +966,7 @@ class FlazioImportAssistant:
                 font_obj.close()
                 if font_path.exists():
                     font_path.unlink()  # Rimuove il file temporaneo originale
+                self.stats["fonts_converted"] += 1
                 print(f"   🔤 Font convertito → [{font_family}]: {real_name}{ext}")
             else:
                 # TTF/OTF già decompresso: sposta nella cartella famiglia
@@ -999,6 +1016,7 @@ class FlazioImportAssistant:
                     if filename:
                         page_docs_dir = self.documents_dir / page_name
                         if self._download_file(full_url, page_docs_dir, filename):
+                            self.stats["documents_downloaded"] += 1
                             print(f"   📄 Documento scaricato: {filename}")
             except Exception as exc:
                 msg = f"Errore link documento: {exc}"
@@ -1040,6 +1058,7 @@ class FlazioImportAssistant:
             with open(dest_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(cleaned_lines))
 
+            self.stats["texts_saved"] += 1
             print(f"   📝 Testo salvato: {page_name}.txt")
         except Exception as exc:
             msg = f"Errore salvataggio testo [{page_name}]: {exc}"
@@ -2179,11 +2198,13 @@ class FlazioImportAssistant:
                 if warmup_only:
                     print(f"   🎨 Wix gallery (warmup-data): {len(warmup_only)} immagini extra")
 
-            # FASE 1 — Download via Playwright per le immagini intercettate dal browser.
+            # FASE 1 — Download via Playwright per TUTTE le immagini.
             # Playwright usa lo stesso contesto HTTP (cookie di sessione Wix, ecc.)
-            # quindi questi download hanno garanzia di successo al 100%.
+            # quindi bypassa protezioni CDN basate su cookie/sessione.
+            # Le immagini da warmup-data e DOM che non sono state intercettate
+            # hanno bisogno del contesto browser per evitare 404 dal CDN Wix.
             pw_downloaded = self._playwright_download_images(
-                page, intercepted_snapshot, page_images_dir, url
+                page, all_imgs, page_images_dir, url
             )
             if pw_downloaded:
                 print(f"   🖼️  Playwright download: {pw_downloaded} immagini")
@@ -2215,11 +2236,22 @@ class FlazioImportAssistant:
 
         for raw_url in url_set:
             try:
+                if not raw_url or "http" not in raw_url:
+                    continue
+
                 # URL originale senza query string
-                clean_url = raw_url.split("?")[0]
+                clean_url = urljoin(page_url, raw_url).split("?")[0]
 
                 # URL normalizzato (per Wix: base senza /v1/fill/)
                 normalized = self._normalize_wix_url(clean_url)
+
+                # Verifica che abbia un'estensione immagine o sia un CDN noto
+                parsed_path = urlparse(normalized).path
+                ext = Path(parsed_path).suffix.lower()
+                CDN_NO_EXT = ("wixstatic.com", "cloudinary.com", "imgix.net",
+                              "unsplash.com", "shopify.com", "squarespace-cdn.com")
+                if ext not in IMAGE_EXTENSIONS and not any(c in normalized for c in CDN_NO_EXT):
+                    continue
 
                 # Salta URL Wix non validi (friendly names rimasti nel path)
                 if "static.wixstatic.com/media/" in normalized:
@@ -2270,14 +2302,29 @@ class FlazioImportAssistant:
                 # Download via Playwright (raw_url preserva i parametri originali)
                 # che il browser ha già usato con successo
                 try:
+                    # Tentativo 1: URL normalizzato (base, max risoluzione)
                     resp = page.request.get(
                         normalized,
                         headers={"Referer": page_url},
                         timeout=15000,
                     )
-                    if not resp.ok:
+                    # Tentativo 2: URL raw originale (con parametri CDN)
+                    if not resp.ok and raw_url != normalized:
                         resp = page.request.get(
                             raw_url,
+                            headers={"Referer": page_url},
+                            timeout=15000,
+                        )
+                    # Tentativo 3: URL fill costruito per Wix CDN
+                    if not resp.ok and "wixstatic.com/media/" in normalized:
+                        wix_fname = Path(urlparse(normalized).path).name
+                        fill_url = (
+                            f"{normalized}/v1/fill/"
+                            f"w_1920,h_1080,al_c,q_90,usm_0.66_1.00_0.01,"
+                            f"enc_avif,quality_auto/{wix_fname}"
+                        )
+                        resp = page.request.get(
+                            fill_url,
                             headers={"Referer": page_url},
                             timeout=15000,
                         )
