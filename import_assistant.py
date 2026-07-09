@@ -192,12 +192,36 @@ class FlazioImportAssistant:
         # Normalizzazione URL di input
         if not target_url.startswith(("http://", "https://")):
             target_url = "https://" + target_url
+
+        # Controllo DNS intelligente per gestire host www vs non-www
+        import socket
+        parsed = urlparse(target_url)
+        netloc = parsed.netloc
+        hostname = netloc.split(":")[0]
+
+        def _resolves(host: str) -> bool:
+            try:
+                socket.gethostbyname(host)
+                return True
+            except Exception:
+                return False
+
+        if not _resolves(hostname):
+            alt_host = hostname[4:] if hostname.startswith("www.") else "www." + hostname
+            if _resolves(alt_host):
+                new_netloc = alt_host
+                if ":" in netloc:
+                    new_netloc = f"{alt_host}:{netloc.split(':')[1]}"
+                parsed = parsed._replace(netloc=new_netloc)
+                target_url = parsed.geturl()
+                print(f"   ℹ️  Rilevato problema DNS per '{hostname}'. Autocorretto in: {target_url}")
+
         self.target_url: str = target_url
 
         # Estrae dominio pulito (senza "www.")
-        parsed = urlparse(target_url)
         self.domain: str = parsed.netloc.replace("www.", "")
         self.site_name: str = self._sanitize_name(self.domain.split(".")[0])
+
 
         # --- Struttura cartelle (pathlib) ---
         # Root: Imported_Sites/[Nome_Sito]/
@@ -603,6 +627,8 @@ class FlazioImportAssistant:
             Tenta il download da try_url con rotazione Referer.
             Ritorna True se OK, False se 404 definitivo, None se fallito (tenta next).
             """
+            is_wix_cdn = "wixstatic.com" in try_url or "wixmp.com" in try_url
+
             attempts = [
                 referer,
                 f"{urlparse(try_url).scheme}://{urlparse(try_url).netloc}/",
@@ -620,6 +646,19 @@ class FlazioImportAssistant:
                     if resp.status_code in (200, 206):
                         return _save(resp)
                     if resp.status_code == 404:
+                        # Wix CDN a volte restituisce 404 sotto carico concorrente
+                        # (rate limiting mascherato). Ritenta una volta dopo breve pausa.
+                        if is_wix_cdn and i == 0:
+                            _time.sleep(1.0)
+                            retry_resp = requests.get(
+                                try_url,
+                                headers=_build_headers(ref, try_url),
+                                timeout=20,
+                                stream=True,
+                                allow_redirects=True,
+                            )
+                            if retry_resp.status_code in (200, 206):
+                                return _save(retry_resp)
                         return None  # 404 → prova URL successivo nella catena
                     if resp.status_code == 429:
                         _time.sleep(2 * (i + 1))
@@ -796,14 +835,55 @@ class FlazioImportAssistant:
             logger.warning(msg)
             return
 
+        # Validazione: file troppo piccoli sono probabilmente download corrotti
+        if font_path.exists() and font_path.stat().st_size < 100:
+            msg = f"Font troppo piccolo, probabile download corrotto [{font_path.name}] ({font_path.stat().st_size} bytes)"
+            logger.warning(msg)
+            font_path.unlink(missing_ok=True)
+            return
 
         try:
             font_obj = _TTFont(str(font_path))
         except Exception as exc:
-            msg = f"Impossibile aprire il font [{font_path.name}]: {exc}"
-            print(f"   ⚠️  {msg}")
-            logger.warning(msg, exc_info=True)
-            return
+            # Se è un errore brotli su WOFF2, il file potrebbe essere corrotto.
+            # Tenta un ri-download diretto via requests con header corretti.
+            if "brotli" in str(exc).lower() and font_path.suffix.lower() == ".woff2":
+                msg = f"Brotli decompression fallita per [{font_path.name}], tentativo ri-download..."
+                logger.warning(msg)
+                try:
+                    import requests as _req
+                    # Cerca l'URL originale nella cache dei download
+                    original_url = None
+                    with self._lock:
+                        for cached_url, cached_path in self.downloaded_files.items():
+                            if cached_path == font_path or cached_path.name == font_path.name:
+                                original_url = cached_url
+                                break
+                    if original_url:
+                        resp = _req.get(original_url, timeout=15, headers={
+                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                          "Chrome/122.0.0.0 Safari/537.36",
+                            "Accept": "application/font-woff2,application/font-woff,*/*",
+                        })
+                        if resp.status_code == 200 and len(resp.content) > 100:
+                            with open(font_path, "wb") as f:
+                                f.write(resp.content)
+                            font_obj = _TTFont(str(font_path))
+                        else:
+                            raise exc  # ri-solleva l'errore originale
+                    else:
+                        raise exc
+                except Exception:
+                    msg = f"Impossibile aprire il font [{font_path.name}]: {exc}"
+                    print(f"   ⚠️  {msg}")
+                    logger.warning(msg, exc_info=True)
+                    return
+            else:
+                msg = f"Impossibile aprire il font [{font_path.name}]: {exc}"
+                print(f"   ⚠️  {msg}")
+                logger.warning(msg, exc_info=True)
+                return
 
 
         try:
@@ -1988,7 +2068,24 @@ class FlazioImportAssistant:
             # ── Navigazione: 'load' invece di 'networkidle' (≤5x più veloce) ─────
             try:
                 page.goto(url, wait_until="load", timeout=30000)
-            except Exception:
+            except Exception as nav_err:
+                # Se ERR_NAME_NOT_RESOLVED, prova hostname alternativo (www ↔ non-www)
+                if "ERR_NAME_NOT_RESOLVED" in str(nav_err):
+                    parsed_nav = urlparse(url)
+                    host = parsed_nav.netloc.split(":")[0]
+                    alt_host = host[4:] if host.startswith("www.") else "www." + host
+                    alt_netloc = alt_host
+                    if ":" in parsed_nav.netloc:
+                        alt_netloc = f"{alt_host}:{parsed_nav.netloc.split(':')[1]}"
+                    alt_url = parsed_nav._replace(netloc=alt_netloc).geturl()
+                    try:
+                        page.goto(alt_url, wait_until="load", timeout=30000)
+                        # Aggiorna url per il resto del processing
+                        url = alt_url
+                        print(f"   ℹ️  DNS fallback: {alt_url}")
+                    except Exception:
+                        pass  # continua al fallback domcontentloaded sotto
+
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=20000)
                     page.wait_for_timeout(1500)
