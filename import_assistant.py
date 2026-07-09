@@ -2131,12 +2131,14 @@ class FlazioImportAssistant:
                         msg = f"Impossibile caricare: {nav_err}"
                         print(f"   ❌ {msg}")
                         logger.error(msg, exc_info=True)
+                        self.stats["pages_failed"] += 1
                         return
 
             if not nav_success:
                 msg = f"Tutti i tentativi di navigazione falliti per {url}"
                 print(f"   ❌ {msg}")
                 logger.error(msg)
+                self.stats["pages_failed"] += 1
                 return
 
 
@@ -2207,6 +2209,7 @@ class FlazioImportAssistant:
                 page, all_imgs, page_images_dir, url
             )
             if pw_downloaded:
+                self.stats["images_downloaded"] += pw_downloaded
                 print(f"   🖼️  Playwright download: {pw_downloaded} immagini")
 
             # FASE 2 — Download HTTP parallelo per le immagini non ancora scaricate
@@ -2290,8 +2293,11 @@ class FlazioImportAssistant:
                                 dest_path.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(existing_path, dest_path)
                                 downloaded_count += 1
+                                self.stats["images_cached"] += 1
                             except Exception:
                                 pass
+                        else:
+                            self.stats["images_cached"] += 1
                         continue
 
                 if dest_path.exists():
@@ -2606,8 +2612,11 @@ class FlazioImportAssistant:
                             try:
                                 dest_path.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(existing_path, dest_path)
+                                self.stats["images_cached"] += 1
                             except Exception:
                                 pass
+                        else:
+                            self.stats["images_cached"] += 1
                         continue
 
                 # ── Costruisce la catena di fallback URL ─────────────────────
@@ -2662,10 +2671,12 @@ class FlazioImportAssistant:
                 try:
                     if future.result():
                         downloaded_count += 1
+                        self.stats["images_downloaded"] += 1
                     else:
                         # Download fallito: rimuovi dalla cache globale
                         with self._lock:
                             self.downloaded_files.pop(url_done, None)
+                        self.stats["images_failed"] += 1
                 except Exception as exc:
                     msg = f"Eccezione durante il download parallelo di {name_done}: {exc}"
                     logger.warning(msg, exc_info=True)
@@ -2731,12 +2742,46 @@ class FlazioImportAssistant:
             self._write_csv()
 
             # Riepilogo finale
+            self.stats["pages_ok"] = len(self.visited_urls) - self.stats["pages_failed"]
+            self.stats["products_detected"] = len(self.detected_products)
+
             print("\n" + "=" * 60)
             print("  ✅ COMPLETATO!")
             print(f"  📄 Pagine analizzate : {len(self.visited_urls)}")
-            print(f"  🛍️  Prodotti rilevati : {len(self.detected_products)}")
+            print(f"  🛍️  Prodotti rilevati : {self.stats['products_detected']}")
             print(f"  📁 Cartella output   : {self.root_dir}")
             print("=" * 60 + "\n")
+            
+            # Scrittura del riepilogo dettagliato all'inizio del file di log
+            try:
+                site_log_path = self.root_dir / "import_details.txt"
+                if site_log_path.exists():
+                    with open(site_log_path, "r", encoding="utf-8") as f:
+                        old_content = f.read()
+                    
+                    summary = (
+                        "============================================================\n"
+                        "               RIEPILOGO DETTAGLIATO SCRAPING               \n"
+                        "============================================================\n"
+                        f"  📄 Pagine Caricate con Successo: {self.stats['pages_ok']}\n"
+                        f"  ⚠️  Pagine Fallite             : {self.stats['pages_failed']}\n"
+                        f"  🖼️  Immagini Scaricate         : {self.stats['images_downloaded']}\n"
+                        f"  🔄 Immagini Saltate (in cache) : {self.stats['images_cached']}\n"
+                        f"  ❌ Immagini Fallite (404/Err)  : {self.stats['images_failed']}\n"
+                        f"  🔤 Font Convertiti             : {self.stats['fonts_converted']}\n"
+                        f"  ♻️  Font Duplicati (saltati)   : {self.stats['fonts_duplicated']}\n"
+                        f"  📄 Documenti Scaricati         : {self.stats['documents_downloaded']}\n"
+                        f"  📝 File di Testo Salvati       : {self.stats['texts_saved']}\n"
+                        f"  🛍️  Prodotti Rilevati          : {self.stats['products_detected']}\n"
+                        "============================================================\n\n"
+                        "--- LOG ERRORI E WARNING DI DETTAGLIO ---\n\n"
+                    )
+                    
+                    with open(site_log_path, "w", encoding="utf-8") as f:
+                        f.write(summary + old_content)
+            except Exception as e:
+                print(f"   ⚠️ Impossibile scrivere il riepilogo in import_details.txt: {e}")
+                
         finally:
             if hasattr(self, '_site_handler'):
                 logger.removeHandler(self._site_handler)
