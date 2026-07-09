@@ -581,10 +581,11 @@ class FlazioImportAssistant:
     # MODULO FONT: _scrape_fonts()
     # -----------------------------------------------------------------------
 
-    def _scrape_fonts(self, page: "Page", page_url: str) -> None:
+    def _scrape_fonts(self, page: "Page", page_url: str, intercepted_font_urls: set) -> None:
         """
-        Estrae tutti gli URL @font-face dalla pagina tramite l'API CSS del browser,
-        scarica i file font e li converte in TTF organizzandoli per famiglia.
+        Estrae tutti gli URL @font-face dalla pagina tramite l'API CSS del browser
+        e dall'intercettazione dei pacchetti di rete, scarica i file font
+        e li converte in TTF/OTF organizzandoli per famiglia.
         """
         try:
             # Raccoglie gli URL font dalle regole @font-face dei fogli di stile
@@ -615,9 +616,10 @@ class FlazioImportAssistant:
             }""")
         except Exception as exc:
             print(f"   ⚠️  Errore estrazione font JS: {exc}")
-            return
+            font_urls = []
 
-        for font_href in set(font_urls):
+        all_font_urls = set(font_urls) | intercepted_font_urls
+        for font_href in all_font_urls:
             # Normalizza e pulisce l'URL
             full_url = urljoin(page_url, font_href).split("?")[0].split("#")[0]
             font_name = unquote(Path(urlparse(full_url).path).name)
@@ -635,6 +637,66 @@ class FlazioImportAssistant:
                 font_path = self.fonts_dir / font_name
                 if font_path.exists():
                     self._convert_and_organize_font(font_path)
+
+    @staticmethod
+    def _normalize_font_family(family: str) -> str:
+        """
+        Normalizza il nome della famiglia del font per raggruppare i vari pesi
+        e varianti (es. Light, W01, Roman, Bold, SemiBold, LT) sotto una singola
+        cartella radice pulita (es. 'DIN_Next', 'Futura', 'Helvetica', 'Cormorant_Garamond').
+        """
+        if not family:
+            return "Unknown"
+        
+        # Pulisce spazi, trattini e underscore per lavorare su blocchi omogenei
+        clean = family.replace("_", " ").replace("-", " ")
+        
+        # Parole chiave da rimuovere che indicano pesi, stili, formati o distributori
+        remove_keywords = {
+            # Pesi / Stili
+            "light", "semibold", "bold", "italic", "regular", "medium", "thin", 
+            "extrabold", "extralight", "ultralight", "heavy", "black", "condensed", 
+            "book", "roman", "oblique", "demi", "extra", "ultra", "narrow",
+            # Distributori / Tag di formato / Versioni
+            "lt", "mt", "vf", "pro", "std", "w01", "w02", "w04", "w05", "w10", "w25", "w06", "w07", "w08", "w09"
+        }
+        
+        # Rimuove le parole chiave mantenendo l'ordine
+        words = clean.split()
+        normalized_words = []
+        for word in words:
+            if word.lower() not in remove_keywords:
+                normalized_words.append(word)
+                
+        if normalized_words:
+            result = "_".join(normalized_words)
+        else:
+            result = family
+
+        # Pulisce trattini o underscore multipli
+        import re
+        result = re.sub(r"_+", "_", result).strip("_")
+        
+        # Mappatura manuale di override per famiglie ben note per garantire raggruppamento ideale
+        lower_result = result.lower()
+        if "cormorant" in lower_result:
+            return "Cormorant_Garamond"
+        if "din_next" in lower_result or "dinnext" in lower_result:
+            return "DIN_Next"
+        if "futura" in lower_result:
+            return "Futura"
+        if "helvetica" in lower_result:
+            return "Helvetica"
+        if "avenir" in lower_result:
+            return "Avenir"
+        if "proxima" in lower_result:
+            return "Proxima_Nova"
+        if "wix_madefor" in lower_result:
+            return "Wix_Madefor"
+        if "cinzel" in lower_result:
+            return "Cinzel"
+            
+        return result
 
     def _convert_and_organize_font(self, font_path: Path) -> None:
         """
@@ -677,8 +739,9 @@ class FlazioImportAssistant:
             if not font_family:
                 font_family = real_name
 
-            # Sanitizzazione dei nomi estratti
+            # Sanitizzazione dei nomi estratti con normalizzazione della famiglia
             real_name   = self._sanitize_name(real_name)
+            font_family = self._normalize_font_family(font_family)
             font_family = self._sanitize_name(font_family)
 
             # Anti-duplicato globale (basato sul nome reale del font)
@@ -690,10 +753,15 @@ class FlazioImportAssistant:
                 return
 
             # Cartella famiglia: Fonts/[FamigliaFont]/
+            # Rileva se contiene tracciati CFF (caratteristici di OpenType .otf)
+            is_cff = "CFF " in font_obj or "CFF2" in font_obj
+            ext = ".otf" if is_cff else ".ttf"
+
+            # Cartella famiglia: Fonts/[FamigliaFont]/
             family_dir = self.fonts_dir / font_family
             family_dir.mkdir(parents=True, exist_ok=True)
 
-            dest_path = family_dir / f"{real_name}.ttf"
+            dest_path = family_dir / f"{real_name}{ext}"
 
             # Anti-duplicato fisico
             if dest_path.exists():
@@ -701,25 +769,24 @@ class FlazioImportAssistant:
                 if font_path.exists():
                     font_path.unlink()
                 self.downloaded_font_keys.add(real_name)
-                print(f"   ♻️  Font già presente: {real_name}.ttf")
+                print(f"   ♻️  Font già presente: {real_name}{ext}")
                 return
 
-            is_ttf = font_path.suffix.lower() == ".ttf"
-
-            if not is_ttf:
-                # Converte woff/woff2/otf → TTF rimuovendo il flavor
+            if font_path.suffix.lower() in (".woff", ".woff2"):
+                # Converte woff/woff2 → OTF/TTF rimuovendo il flavor
                 font_obj.flavor = None
                 font_obj.save(str(dest_path))
                 font_obj.close()
                 if font_path.exists():
                     font_path.unlink()  # Rimuove il file temporaneo originale
-                print(f"   🔤 Font convertito → [{font_family}]: {real_name}.ttf")
+                print(f"   🔤 Font convertito → [{font_family}]: {real_name}{ext}")
             else:
-                # TTF già ok: sposta nella cartella famiglia
+                # TTF/OTF già decompresso: sposta nella cartella famiglia
                 font_obj.close()
                 if font_path != dest_path:
-                    font_path.rename(dest_path)
-                print(f"   💎 Font organizzato → [{font_family}]: {real_name}.ttf")
+                    if font_path.exists():
+                        font_path.rename(dest_path)
+                print(f"   💎 Font organizzato → [{font_family}]: {real_name}{ext}")
 
             self.downloaded_font_keys.add(real_name)
 
@@ -1793,15 +1860,18 @@ class FlazioImportAssistant:
         # 'response' cattura URL reali dopo redirect, solo immagini con HTTP 200/206
         # Evita il conflitto tra page.route() e page.on('request')
         intercepted_image_urls: set = set()
+        intercepted_font_urls: set = set()
 
         def _on_response(response):
             try:
-                if (
-                    response.request.resource_type == "image"
-                    and response.status in (200, 206)
-                ):
-                    with self._lock:
-                        intercepted_image_urls.add(response.url)
+                if response.status in (200, 206):
+                    res_type = response.request.resource_type
+                    if res_type == "image":
+                        with self._lock:
+                            intercepted_image_urls.add(response.url)
+                    elif res_type == "font":
+                        with self._lock:
+                            intercepted_font_urls.add(response.url)
             except Exception:
                 pass
 
@@ -1851,7 +1921,9 @@ class FlazioImportAssistant:
 
             # --- Moduli di estrazione ---
             self._extract_internal_links(soup, url)   # Link interni → coda
-            self._scrape_fonts(page, url)              # Font → TTF
+            with self._lock:
+                intercepted_fonts_snapshot = set(list(intercepted_font_urls))
+            self._scrape_fonts(page, url, intercepted_fonts_snapshot)  # Font → TTF/OTF
             self._scrape_documents(page, url, page_name)  # PDF, DOC, ecc.
             self._save_text(BeautifulSoup(html_content, "html.parser"), page_name)
 
@@ -1968,10 +2040,16 @@ class FlazioImportAssistant:
                 # che il browser ha già usato con successo
                 try:
                     resp = page.request.get(
-                        raw_url,
+                        normalized,
                         headers={"Referer": page_url},
                         timeout=15000,
                     )
+                    if not resp.ok:
+                        resp = page.request.get(
+                            raw_url,
+                            headers={"Referer": page_url},
+                            timeout=15000,
+                        )
                     if resp.ok:
                         body = resp.body()
                         if body and len(body) > 100:  # Scarta risposte vuote/errori
