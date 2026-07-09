@@ -1,150 +1,31 @@
-2026-07-09 14:38:54,436 [ERROR] (Thread: MainThread) Impossibile caricare: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.talkbusiness.it/
-Call log:
-  - navigating to "https://www.talkbusiness.it/", waiting until "domcontentloaded"
-Traceback (most recent call last):
-  File "/Users/ericadibella/Desktop/DIEGO/Flazio/FLAZIO_TOOL/Flazio_Import_Assistant/import_assistant.py", line 1993, in _process_page
-    page.goto(url, wait_until="domcontentloaded", timeout=20000)
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/sync_api/_generated.py", line 9612, in goto
-    self._sync(
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
-    return task.result()
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_page.py", line 557, in goto
-    return await self._main_frame.goto(**locals_to_params(locals()))
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_frame.py", line 156, in goto
-    await self._channel.send(
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_connection.py", line 69, in send
-    return await self._connection.wrap_api_call(
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_connection.py", line 559, in wrap_api_call
-    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
-playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.talkbusiness.it/
-Call log:
-  - navigating to "https://www.talkbusiness.it/", waiting until "domcontentloaded"
-
-2026-07-09 14:39:17,602 [ERROR] (Thread: MainThread) Impossibile caricare: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.talkbusiness.it/
-Call log:
-  - navigating to "https://www.talkbusiness.it/", waiting until "domcontentloaded"
-Traceback (most recent call last):
-  File "/Users/ericadibella/Desktop/DIEGO/Flazio/FLAZIO_TOOL/Flazio_Import_Assistant/import_assistant.py", line 1993, in _process_page
-    page.goto(url, wait_until="domcontentloaded", timeout=20000)
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/sync_api/_generated.py", line 9612, in goto
-    self._sync(
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
-    return task.result()
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_page.py", line 557, in goto
-    return await self._main_frame.goto(**locals_to_params(locals()))
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_frame.py", line 156, in goto
-    await self._channel.send(
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_connection.py", line 69, in send
-    return await self._connection.wrap_api_call(
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/playwright/_impl/_connection.py", line 559, in wrap_api_call
-    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
-playwright._impl._errors.Error: Page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.talkbusiness.it/
-Call log:
-  - navigating to "https://www.talkbusiness.it/", waiting until "domcontentloaded"
-
-2026-07-09 14:40:40,354 [WARNING] (Thread: ThreadPoolExecutor-0_10) 404 Not Found [f165c0_9e9f8ca56a66435da83d4d346c46eb35~mv2_733.jpeg]
-2026-07-09 14:40:40,355 [WARNING] (Thread: ThreadPoolExecutor-0_8) 404 Not Found [f165c0_f1e4e4b13df840f8bb18e671d056bc21~mv2_107.webp]
-2026-07-09 14:40:40,356 [WARNING] (Thread: ThreadPoolExecutor-0_4) 404 Not Found [f165c0_69387a999d0148f08823b4db56a1e0a0~mv2_4623.jpeg]
-2026-07-09 14:40:40,356 [WARNING] (Thread: ThreadPoolExecutor-0_3) 404 Not Found [Mickova-5-TX-edit_8333.jpeg]
-2026-07-09 14:40:40,362 [WARNING] (Thread: ThreadPoolExecutor-0_7) 404 Not Found [f165c0_8b8aa8dc72c3430b87029e83eca5256a~mv2_7270.jpeg]
-2026-07-09 14:40:40,362 [WARNING] (Thread: ThreadPoolExecutor-0_6) 404 Not Found [f165c0_0f5d2c1ad45b418da91e0e90e64de325~mv2_2369.jpeg]
-2026-07-09 14:40:40,363 [WARNING] (Thread: ThreadPoolExecutor-0_0) 404 Not Found [f165c0_a08fda3a4de54f5da587755a84070cc4~mv2_894.jpeg]
-2026-07-09 14:40:40,363 [WARNING] (Thread: ThreadPoolExecutor-0_11) 404 Not Found [f165c0_80a6926d1049446b930c3125c5980307~mv2_2609.jpeg]
-2026-07-09 14:40:40,369 [WARNING] (Thread: ThreadPoolExecutor-0_2) 404 Not Found [f165c0_f383b5075b7846359cabd84fc3508b64~mv2_3537.jpeg]
-2026-07-09 14:40:40,371 [WARNING] (Thread: ThreadPoolExecutor-0_12) 404 Not Found [f165c0_3993c4066f9940ba87c266b9a054e755~mv2_4170.jpeg]
-2026-07-09 14:40:40,399 [WARNING] (Thread: ThreadPoolExecutor-0_1) 404 Not Found [f165c0_044835235a584d44afb1b15a278f949d~mv2_7.webp]
-2026-07-09 14:40:40,399 [WARNING] (Thread: ThreadPoolExecutor-0_9) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_5807.jpeg]
-2026-07-09 14:40:40,486 [WARNING] (Thread: ThreadPoolExecutor-0_13) 404 Not Found [f165c0_938a95ba0f4043eb90b33a53970b7520~mv2_9160.jpeg]
-2026-07-09 14:40:56,787 [WARNING] (Thread: ThreadPoolExecutor-1_1) 404 Not Found [pexels-alex-azabache-4039921_8536.jpg]
-2026-07-09 14:40:56,804 [WARNING] (Thread: ThreadPoolExecutor-1_0) 404 Not Found [f165c0_5a5e6e35d97c448497cd09695d1bc10b~mv2_7815.jpg]
-2026-07-09 14:40:56,830 [WARNING] (Thread: ThreadPoolExecutor-1_2) 404 Not Found [f165c0_bbd0bf8bf5014f8cbf46e58c66344e2f~mv2_2639.jpg]
-2026-07-09 14:41:03,037 [WARNING] (Thread: ThreadPoolExecutor-0_0) 404 Not Found [image_7859.png]
-2026-07-09 14:41:03,120 [WARNING] (Thread: ThreadPoolExecutor-0_2) 404 Not Found [IMG_20170913_160949_5558.jpg]
-2026-07-09 14:41:48,557 [WARNING] (Thread: ThreadPoolExecutor-2_12) 404 Not Found [f165c0_9e9f8ca56a66435da83d4d346c46eb35~mv2_733.jpeg]
-2026-07-09 14:41:48,559 [WARNING] (Thread: ThreadPoolExecutor-2_8) 404 Not Found [German-Language-Immersion-School-Trip__ScaleWidthWzE1MjBd_95]
-2026-07-09 14:41:48,560 [WARNING] (Thread: ThreadPoolExecutor-2_2) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_5807.jpeg]
-2026-07-09 14:41:48,561 [WARNING] (Thread: ThreadPoolExecutor-2_3) 404 Not Found [f165c0_69387a999d0148f08823b4db56a1e0a0~mv2_4623.jpeg]
-2026-07-09 14:41:48,562 [WARNING] (Thread: ThreadPoolExecutor-2_1) 404 Not Found [f165c0_66b0f5fab4654817bc8bce4e8020562e~mv2_9776.jpg]
-2026-07-09 14:41:48,563 [WARNING] (Thread: ThreadPoolExecutor-2_5) 404 Not Found [f165c0_044835235a584d44afb1b15a278f949d~mv2_7.webp]
-2026-07-09 14:41:48,563 [WARNING] (Thread: ThreadPoolExecutor-2_9) 404 Not Found [f165c0_65ce62dca69c46b39732ff48390a1ceb~mv2_3133.jpg]
-2026-07-09 14:41:48,628 [WARNING] (Thread: ThreadPoolExecutor-2_6) 404 Not Found [f165c0_8df04a0d346244a488932280bc11991b~mv2_554.jpg]
-2026-07-09 14:41:48,630 [WARNING] (Thread: ThreadPoolExecutor-2_11) 404 Not Found [f165c0_43774900cf824d778ed8df4498beb270~mv2_1199.jpeg]
-2026-07-09 14:41:48,631 [WARNING] (Thread: ThreadPoolExecutor-2_7) 404 Not Found [f165c0_0044a2614f5d4f82b629b8ec5ab570e3~mv2_8504.jpg]
-2026-07-09 14:41:48,634 [WARNING] (Thread: ThreadPoolExecutor-2_0) 404 Not Found [f165c0_74e69a6883a843c6bcb4eb2e13df049c~mv2_5304.jpeg]
-2026-07-09 14:41:48,635 [WARNING] (Thread: ThreadPoolExecutor-2_4) 404 Not Found [alternanza_scuola_lavoro_5965.jpg]
-2026-07-09 14:41:48,638 [WARNING] (Thread: ThreadPoolExecutor-2_13) 404 Not Found [f165c0_7ed2e0dbc305412d80c3d09db2c65de3~mv2_8943.jpeg]
-2026-07-09 14:42:04,394 [WARNING] (Thread: ThreadPoolExecutor-1_4) 404 Not Found [f165c0_f572cd85057f4ba1a0c3f4250cac35cb~mv2_6368.webp]
-2026-07-09 14:42:04,394 [WARNING] (Thread: ThreadPoolExecutor-1_2) 404 Not Found [f165c0_3d09cb6b6877432283d0112a831fd484~mv2_6577.webp]
-2026-07-09 14:42:04,394 [WARNING] (Thread: ThreadPoolExecutor-1_8) 404 Not Found [f165c0_fe1c46847d0747b582402568e7a3a8f8~mv2_3494.jpeg]
-2026-07-09 14:42:04,429 [WARNING] (Thread: ThreadPoolExecutor-1_6) 404 Not Found [f165c0_66b0f5fab4654817bc8bce4e8020562e~mv2_7036.jpg]
-2026-07-09 14:42:04,429 [WARNING] (Thread: ThreadPoolExecutor-1_7) 404 Not Found [f165c0_59795b878d5947088249bb1066dba2a9~mv2_8963.webp]
-2026-07-09 14:42:04,429 [WARNING] (Thread: ThreadPoolExecutor-1_3) 404 Not Found [f165c0_07dd9f1bd76e4ba79ef908dd416be403~mv2_5885.webp]
-2026-07-09 14:42:04,439 [WARNING] (Thread: ThreadPoolExecutor-1_1) 404 Not Found [f165c0_fb783fecb0d64ceda84b5617fca26a94~mv2_986.jpeg]
-2026-07-09 14:42:04,460 [WARNING] (Thread: ThreadPoolExecutor-1_0) 404 Not Found [Vacanza-estiva-irlanda_Latraccia03-1_edi_5224.jpg]
-2026-07-09 14:42:28,704 [WARNING] (Thread: ThreadPoolExecutor-2_2) 404 Not Found [f165c0_3d09cb6b6877432283d0112a831fd484~mv2_6577.webp]
-2026-07-09 14:42:28,803 [WARNING] (Thread: ThreadPoolExecutor-2_3) 404 Not Found [BELS%20Juniors%20Images%20(50)_edited_4918.jpg]
-2026-07-09 14:42:28,804 [WARNING] (Thread: ThreadPoolExecutor-2_0) 404 Not Found [nurn_9709.webp]
-2026-07-09 14:42:43,948 [WARNING] (Thread: MainThread) Impossibile aprire il font [iEjm9hVxcattz37Y8gZwVVBiiiFZ1SMKhjDurTuPCI4.woff2]: brotli: decoder failed
-Traceback (most recent call last):
-  File "/Users/ericadibella/Desktop/DIEGO/Flazio/FLAZIO_TOOL/Flazio_Import_Assistant/import_assistant.py", line 825, in _convert_and_organize_font
-    font_obj = _TTFont(str(font_path))
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/fontTools/ttLib/ttFont.py", line 189, in __init__
-    self.reader = SFNTReader(file, checkChecksums, fontNumber=fontNumber)
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/fontTools/ttLib/woff2.py", line 80, in __init__
-    decompressedData = brotli.decompress(compressedData)
-brotli.error: brotli: decoder failed
-2026-07-09 14:42:47,533 [WARNING] (Thread: ThreadPoolExecutor-4_4) 404 Not Found [f165c0_044835235a584d44afb1b15a278f949d~mv2_7.webp]
-2026-07-09 14:42:47,535 [WARNING] (Thread: ThreadPoolExecutor-4_6) 404 Not Found [f165c0_65ce62dca69c46b39732ff48390a1ceb~mv2_3133.jpg]
-2026-07-09 14:42:47,537 [WARNING] (Thread: ThreadPoolExecutor-4_0) 404 Not Found [f165c0_66b0f5fab4654817bc8bce4e8020562e~mv2_9776.jpg]
-2026-07-09 14:42:47,539 [WARNING] (Thread: ThreadPoolExecutor-4_8) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_5807.jpeg]
-2026-07-09 14:42:47,540 [WARNING] (Thread: ThreadPoolExecutor-4_7) 404 Not Found [f165c0_43774900cf824d778ed8df4498beb270~mv2_1199.jpeg]
-2026-07-09 14:42:47,553 [WARNING] (Thread: ThreadPoolExecutor-4_9) 404 Not Found [f165c0_9e9f8ca56a66435da83d4d346c46eb35~mv2_733.jpeg]
-2026-07-09 14:42:47,575 [WARNING] (Thread: ThreadPoolExecutor-4_5) 404 Not Found [German-Language-Immersion-School-Trip__ScaleWidthWzE1MjBd_95]
-2026-07-09 14:42:47,577 [WARNING] (Thread: ThreadPoolExecutor-4_1) 404 Not Found [f165c0_74e69a6883a843c6bcb4eb2e13df049c~mv2_5304.jpeg]
-2026-07-09 14:42:47,631 [WARNING] (Thread: ThreadPoolExecutor-4_3) 404 Not Found [f165c0_69387a999d0148f08823b4db56a1e0a0~mv2_4623.jpeg]
-2026-07-09 14:42:47,672 [WARNING] (Thread: ThreadPoolExecutor-4_2) 404 Not Found [alternanza_scuola_lavoro_5965.jpg]
-2026-07-09 14:42:58,587 [WARNING] (Thread: MainThread) Impossibile aprire il font [helvetica-w01-roman.woff2]: brotli: decoder failed
-Traceback (most recent call last):
-  File "/Users/ericadibella/Desktop/DIEGO/Flazio/FLAZIO_TOOL/Flazio_Import_Assistant/import_assistant.py", line 825, in _convert_and_organize_font
-    font_obj = _TTFont(str(font_path))
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/fontTools/ttLib/ttFont.py", line 189, in __init__
-    self.reader = SFNTReader(file, checkChecksums, fontNumber=fontNumber)
-  File "/Users/ericadibella/Library/Python/3.9/lib/python/site-packages/fontTools/ttLib/woff2.py", line 80, in __init__
-    decompressedData = brotli.decompress(compressedData)
-brotli.error: brotli: decoder failed
-2026-07-09 14:43:09,828 [WARNING] (Thread: ThreadPoolExecutor-3_5) 404 Not Found [f165c0_044835235a584d44afb1b15a278f949d~mv2_1627.webp]
-2026-07-09 14:43:09,831 [WARNING] (Thread: ThreadPoolExecutor-3_0) 404 Not Found [f165c0_66b0f5fab4654817bc8bce4e8020562e~mv2_7036.jpg]
-2026-07-09 14:43:09,834 [WARNING] (Thread: ThreadPoolExecutor-3_6) 404 Not Found [f165c0_69387a999d0148f08823b4db56a1e0a0~mv2_9980.jpeg]
-2026-07-09 14:43:09,834 [WARNING] (Thread: ThreadPoolExecutor-3_7) 404 Not Found [f165c0_43774900cf824d778ed8df4498beb270~mv2_1771.jpeg]
-2026-07-09 14:43:09,835 [WARNING] (Thread: ThreadPoolExecutor-3_3) 404 Not Found [Vacanza-estiva-irlanda_Latraccia03-1_edi_5224.jpg]
-2026-07-09 14:43:09,835 [WARNING] (Thread: ThreadPoolExecutor-3_2) 404 Not Found [f165c0_fb783fecb0d64ceda84b5617fca26a94~mv2_986.jpeg]
-2026-07-09 14:43:09,835 [WARNING] (Thread: ThreadPoolExecutor-3_1) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_9804.jpeg]
-2026-07-09 14:43:09,878 [WARNING] (Thread: ThreadPoolExecutor-3_4) 404 Not Found [The_15_best_private_high-91e0cad7c99aad61f64434b7d34f33e7_ed]
-2026-07-09 14:43:40,225 [WARNING] (Thread: ThreadPoolExecutor-5_1) 404 Not Found [Partnership_9499.jpg]
-2026-07-09 14:43:40,381 [WARNING] (Thread: ThreadPoolExecutor-5_0) 404 Not Found [Businessmen_with_Umbrellas_1761.jpg]
-2026-07-09 14:44:19,554 [WARNING] (Thread: ThreadPoolExecutor-6_0) 404 Not Found [Studenti_tra_le_classi_4665.jpg]
-2026-07-09 14:44:32,511 [WARNING] (Thread: ThreadPoolExecutor-7_4) 404 Not Found [f165c0_3d09cb6b6877432283d0112a831fd484~mv2_1941.webp]
-2026-07-09 14:44:32,532 [WARNING] (Thread: ThreadPoolExecutor-7_0) 404 Not Found [nurn_9143.webp]
-2026-07-09 14:44:32,651 [WARNING] (Thread: ThreadPoolExecutor-7_1) 404 Not Found [malta_7593.jpg]
-2026-07-09 14:44:32,651 [WARNING] (Thread: ThreadPoolExecutor-7_3) 404 Not Found [hq720_9201.jpg]
-2026-07-09 14:44:32,652 [WARNING] (Thread: ThreadPoolExecutor-7_2) 404 Not Found [Vacanza-estiva-irlanda_Latraccia03-1_1833.jpg]
-2026-07-09 14:44:52,246 [WARNING] (Thread: ThreadPoolExecutor-8_0) 404 Not Found [IMG_20170913_160949_7724.jpg]
-2026-07-09 14:44:52,248 [WARNING] (Thread: ThreadPoolExecutor-8_1) 404 Not Found [image_1840.png]
-2026-07-09 14:45:34,318 [WARNING] (Thread: ThreadPoolExecutor-9_1) 404 Not Found [Man_Preparing_to_Fly_a_Plane_edited_3996.jpg]
-2026-07-09 14:45:34,659 [WARNING] (Thread: ThreadPoolExecutor-9_0) 404 Not Found [Riunione_creativa_5186.jpg]
-2026-07-09 14:47:30,282 [WARNING] (Thread: ThreadPoolExecutor-5_2) 404 Not Found [Man_Preparing_to_Fly_a_Plane_edited_2117.jpg]
-2026-07-09 14:47:45,862 [WARNING] (Thread: ThreadPoolExecutor-6_2) 404 Not Found [f165c0_5a5e6e35d97c448497cd09695d1bc10b~mv2_8684.jpg]
-2026-07-09 14:48:11,928 [WARNING] (Thread: ThreadPoolExecutor-7_1) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_9804.jpeg]
-2026-07-09 14:48:11,932 [WARNING] (Thread: ThreadPoolExecutor-7_0) 404 Not Found [f165c0_3993c4066f9940ba87c266b9a054e755~mv2_9944.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_8) 404 Not Found [f165c0_0f5d2c1ad45b418da91e0e90e64de325~mv2_711.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_7) 404 Not Found [f165c0_80a6926d1049446b930c3125c5980307~mv2_9353.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_9) 404 Not Found [f165c0_8b8aa8dc72c3430b87029e83eca5256a~mv2_2529.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_3) 404 Not Found [f165c0_f383b5075b7846359cabd84fc3508b64~mv2_3978.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_5) 404 Not Found [f165c0_938a95ba0f4043eb90b33a53970b7520~mv2_6329.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_4) 404 Not Found [f165c0_69387a999d0148f08823b4db56a1e0a0~mv2_9980.jpeg]
-2026-07-09 14:48:11,933 [WARNING] (Thread: ThreadPoolExecutor-7_11) 404 Not Found [f165c0_044835235a584d44afb1b15a278f949d~mv2_1627.webp]
-2026-07-09 14:48:12,649 [WARNING] (Thread: ThreadPoolExecutor-7_10) 404 Not Found [Family-of-four-holding-an-American-flag-1_6770.jpeg]
-2026-07-09 14:48:12,649 [WARNING] (Thread: ThreadPoolExecutor-7_12) 404 Not Found [f165c0_c93c1409622d4a50a98e06a349c4e5d7~mv2_2313.jpeg]
-2026-07-09 14:48:30,036 [WARNING] (Thread: ThreadPoolExecutor-8_0) 404 Not Found [logotalk_3009.jpg]
-2026-07-09 14:49:46,970 [WARNING] (Thread: ThreadPoolExecutor-9_1) 404 Not Found [Businessmen_with_Umbrellas_8832.jpg]
-2026-07-09 14:50:43,596 [WARNING] (Thread: ThreadPoolExecutor-10_0) 404 Not Found [Studenti_tra_le_classi_3122.jpg]
+2026-07-09 14:59:00,417 [WARNING] (Thread: ThreadPoolExecutor-0_3) 404 Not Found [German-Language-Immersion-School-Trip__ScaleWidthWzE1MjBd_95]
+2026-07-09 14:59:00,530 [WARNING] (Thread: ThreadPoolExecutor-0_1) 404 Not Found [Riunione_creativa_1960.jpg]
+2026-07-09 14:59:00,614 [WARNING] (Thread: ThreadPoolExecutor-0_2) 404 Not Found [Man_Preparing_to_Fly_a_Plane_edited_7972.jpg]
+2026-07-09 14:59:59,828 [WARNING] (Thread: ThreadPoolExecutor-1_3) 404 Not Found [alternanza_scuola_lavoro_5999.jpg]
+2026-07-09 14:59:59,830 [WARNING] (Thread: ThreadPoolExecutor-1_6) 404 Not Found [f165c0_69387a999d0148f08823b4db56a1e0a0~mv2_8316.jpeg]
+2026-07-09 14:59:59,836 [WARNING] (Thread: ThreadPoolExecutor-1_9) 404 Not Found [f165c0_fb783fecb0d64ceda84b5617fca26a94~mv2_6236.jpeg]
+2026-07-09 14:59:59,839 [WARNING] (Thread: ThreadPoolExecutor-1_0) 404 Not Found [f165c0_43774900cf824d778ed8df4498beb270~mv2_4426.jpeg]
+2026-07-09 14:59:59,841 [WARNING] (Thread: ThreadPoolExecutor-1_2) 404 Not Found [f165c0_044835235a584d44afb1b15a278f949d~mv2_6064.webp]
+2026-07-09 14:59:59,842 [WARNING] (Thread: ThreadPoolExecutor-1_1) 404 Not Found [f165c0_0044a2614f5d4f82b629b8ec5ab570e3~mv2_6380.jpg]
+2026-07-09 14:59:59,846 [WARNING] (Thread: ThreadPoolExecutor-1_10) 404 Not Found [f165c0_9e9f8ca56a66435da83d4d346c46eb35~mv2_8506.jpeg]
+2026-07-09 14:59:59,923 [WARNING] (Thread: ThreadPoolExecutor-1_7) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_9047.jpeg]
+2026-07-09 14:59:59,937 [WARNING] (Thread: ThreadPoolExecutor-1_8) 404 Not Found [f165c0_8df04a0d346244a488932280bc11991b~mv2_4130.jpg]
+2026-07-09 14:59:59,937 [WARNING] (Thread: ThreadPoolExecutor-1_11) 404 Not Found [f165c0_74e69a6883a843c6bcb4eb2e13df049c~mv2_8262.jpeg]
+2026-07-09 14:59:59,938 [WARNING] (Thread: ThreadPoolExecutor-1_12) 404 Not Found [f165c0_1a4d90f4c5a9475e8c20503f309ea74a~mv2_4436.jpg]
+2026-07-09 14:59:59,939 [WARNING] (Thread: ThreadPoolExecutor-1_4) 404 Not Found [f165c0_66b0f5fab4654817bc8bce4e8020562e~mv2_135.jpg]
+2026-07-09 14:59:59,940 [WARNING] (Thread: ThreadPoolExecutor-1_5) 404 Not Found [f165c0_7ed2e0dbc305412d80c3d09db2c65de3~mv2_9309.jpeg]
+2026-07-09 15:01:13,125 [WARNING] (Thread: ThreadPoolExecutor-3_0) 404 Not Found [image_1306.png]
+2026-07-09 15:01:28,102 [WARNING] (Thread: ThreadPoolExecutor-4_1) 404 Not Found [Partnership_2359.jpg]
+2026-07-09 15:02:06,754 [WARNING] (Thread: ThreadPoolExecutor-5_1) 404 Not Found [f165c0_0044a2614f5d4f82b629b8ec5ab570e3~mv2_6380.jpg]
+2026-07-09 15:02:06,786 [WARNING] (Thread: ThreadPoolExecutor-5_3) 404 Not Found [f165c0_19c1fcf19ad54995b8be628607483d9a~mv2_5686.webp]
+2026-07-09 15:02:06,792 [WARNING] (Thread: ThreadPoolExecutor-5_6) 404 Not Found [f165c0_66b0f5fab4654817bc8bce4e8020562e~mv2_135.jpg]
+2026-07-09 15:02:06,793 [WARNING] (Thread: ThreadPoolExecutor-5_12) 404 Not Found [f165c0_fb783fecb0d64ceda84b5617fca26a94~mv2_6236.jpeg]
+2026-07-09 15:02:06,795 [WARNING] (Thread: ThreadPoolExecutor-5_11) 404 Not Found [f165c0_9e9f8ca56a66435da83d4d346c46eb35~mv2_8506.jpeg]
+2026-07-09 15:02:06,796 [WARNING] (Thread: ThreadPoolExecutor-5_14) 404 Not Found [f165c0_1a4d90f4c5a9475e8c20503f309ea74a~mv2_4436.jpg]
+2026-07-09 15:02:06,797 [WARNING] (Thread: ThreadPoolExecutor-5_10) 404 Not Found [f165c0_f572cd85057f4ba1a0c3f4250cac35cb~mv2_5393.webp]
+2026-07-09 15:02:06,798 [WARNING] (Thread: ThreadPoolExecutor-5_5) 404 Not Found [alternanza_scuola_lavoro_5999.jpg]
+2026-07-09 15:02:06,800 [WARNING] (Thread: ThreadPoolExecutor-5_4) 404 Not Found [f165c0_8df04a0d346244a488932280bc11991b~mv2_4130.jpg]
+2026-07-09 15:02:06,800 [WARNING] (Thread: ThreadPoolExecutor-5_0) 404 Not Found [f165c0_7ed2e0dbc305412d80c3d09db2c65de3~mv2_9309.jpeg]
+2026-07-09 15:02:06,844 [WARNING] (Thread: ThreadPoolExecutor-5_9) 404 Not Found [f165c0_abb86ba10975471c92965b17fadfa039~mv2_9047.jpeg]
+2026-07-09 15:05:49,974 [WARNING] (Thread: ThreadPoolExecutor-6_2) 404 Not Found [pexels-alex-azabache-4039921_1247.jpg]
+2026-07-09 15:05:49,976 [WARNING] (Thread: ThreadPoolExecutor-6_1) 404 Not Found [f165c0_5a5e6e35d97c448497cd09695d1bc10b~mv2_9590.jpg]

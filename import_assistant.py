@@ -2065,35 +2065,60 @@ class FlazioImportAssistant:
         self._setup_resource_blocking(page)
 
         try:
-            # ── Navigazione: 'load' invece di 'networkidle' (≤5x più veloce) ─────
-            try:
-                page.goto(url, wait_until="load", timeout=30000)
-            except Exception as nav_err:
-                # Se ERR_NAME_NOT_RESOLVED, prova hostname alternativo (www ↔ non-www)
-                if "ERR_NAME_NOT_RESOLVED" in str(nav_err):
-                    parsed_nav = urlparse(url)
-                    host = parsed_nav.netloc.split(":")[0]
-                    alt_host = host[4:] if host.startswith("www.") else "www." + host
-                    alt_netloc = alt_host
-                    if ":" in parsed_nav.netloc:
-                        alt_netloc = f"{alt_host}:{parsed_nav.netloc.split(':')[1]}"
-                    alt_url = parsed_nav._replace(netloc=alt_netloc).geturl()
-                    try:
-                        page.goto(alt_url, wait_until="load", timeout=30000)
-                        # Aggiorna url per il resto del processing
-                        url = alt_url
-                        print(f"   ℹ️  DNS fallback: {alt_url}")
-                    except Exception:
-                        pass  # continua al fallback domcontentloaded sotto
+            # ── Navigazione con retry per DNS transitori ─────────────────────
+            # Chromium a volte non risolve hostname che il DNS di sistema gestisce.
+            # Strategia: 3 tentativi con delay crescente, alternando hostname.
+            import time as _nav_time
 
+            parsed_nav = urlparse(url)
+            host = parsed_nav.netloc.split(":")[0]
+            alt_host = host[4:] if host.startswith("www.") else "www." + host
+            alt_netloc = alt_host
+            if ":" in parsed_nav.netloc:
+                alt_netloc = f"{alt_host}:{parsed_nav.netloc.split(':')[1]}"
+            alt_url = parsed_nav._replace(netloc=alt_netloc).geturl()
+
+            # Lista tentativi: URL originale, alternativo, originale con delay
+            nav_attempts = [
+                (url, "load", 30000),
+                (alt_url, "load", 30000),
+                (url, "domcontentloaded", 20000),
+                (alt_url, "domcontentloaded", 20000),
+            ]
+
+            nav_success = False
+            for attempt_idx, (try_nav_url, wait_until, timeout) in enumerate(nav_attempts):
                 try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=20000)
-                    page.wait_for_timeout(1500)
-                except Exception as e:
-                    msg = f"Impossibile caricare: {e}"
-                    print(f"   ❌ {msg}")
-                    logger.error(msg, exc_info=True)
-                    return
+                    page.goto(try_nav_url, wait_until=wait_until, timeout=timeout)
+                    if try_nav_url != url:
+                        url = try_nav_url
+                        print(f"   ℹ️  DNS fallback: {url}")
+                    if wait_until == "domcontentloaded":
+                        page.wait_for_timeout(1500)
+                    nav_success = True
+                    break
+                except Exception as nav_err:
+                    is_dns = "ERR_NAME_NOT_RESOLVED" in str(nav_err)
+                    if is_dns and attempt_idx < len(nav_attempts) - 1:
+                        # Pausa progressiva prima del prossimo tentativo
+                        delay = 2 * (attempt_idx + 1)
+                        print(f"   ⏳ DNS non risolto, riprovo tra {delay}s...")
+                        _nav_time.sleep(delay)
+                        continue
+                    elif not is_dns and attempt_idx == 0:
+                        # Errore non-DNS al primo tentativo: prova domcontentloaded
+                        continue
+                    else:
+                        msg = f"Impossibile caricare: {nav_err}"
+                        print(f"   ❌ {msg}")
+                        logger.error(msg, exc_info=True)
+                        return
+
+            if not nav_success:
+                msg = f"Tutti i tentativi di navigazione falliti per {url}"
+                print(f"   ❌ {msg}")
+                logger.error(msg)
+                return
 
 
             # ── Scroll progressivo ottimizzato ──────────────────────────────
@@ -2632,7 +2657,10 @@ class FlazioImportAssistant:
             # Un unico browser + un unico context (Playwright sync API è single-thread)
             with sync_playwright() as pw:
                 self._playwright = pw
-                self._browser = pw.chromium.launch(headless=True)
+                self._browser = pw.chromium.launch(
+                    headless=True,
+                    args=["--disable-async-dns"],  # Usa DNS di sistema (più affidabile)
+                )
                 context: BrowserContext = self._browser.new_context(
                     user_agent=(
                         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
